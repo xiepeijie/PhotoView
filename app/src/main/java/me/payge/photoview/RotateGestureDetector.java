@@ -2,9 +2,7 @@ package me.payge.photoview;
 
 import android.view.MotionEvent;
 
-/**
- * Created by q2366 on 2015/10/12.
- */
+
 public class RotateGestureDetector {
 
     private static final int MAX_DEGREES_STEP = 120;
