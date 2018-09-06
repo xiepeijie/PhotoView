@@ -1,11 +1,16 @@
 package me.payge.photoview;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.widget.AppCompatImageView;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -23,7 +28,7 @@ import android.widget.Scroller;
  * @author liuheng on 2015/6/21.
  * 如有任何意见和建议可邮件  bmme@vip.qq.com
  */
-public class PhotoView extends ImageView {
+public class PhotoView extends AppCompatImageView {
 
     private final static int MIN_ROTATE = 35;
     private final static int ANIMA_DURING = 340;
@@ -91,6 +96,14 @@ public class PhotoView extends ImageView {
     private Runnable mCompleteCallBack;
 
     private OnLongClickListener mLongClick;
+
+    //pull down transform like WeChat
+    boolean touchDown = false;
+    boolean canTransform = false;
+    float moveX = 0, moveY = 0;
+    float distanceX = 0, distanceY = 0;
+    float pullDownScale = 1F;
+    //pull down transform like WeChat
 
     public PhotoView(Context context) {
         super(context);
@@ -262,7 +275,7 @@ public class PhotoView extends ImageView {
         if (!hasDrawable) return;
         if (!isKnowSize) return;
 
-        mBaseMatrix.reset();
+        //mBaseMatrix.reset();
         mAnimaMatrix.reset();
 
         isZoomUp = false;
@@ -544,8 +557,8 @@ public class PhotoView extends ImageView {
 
         if (!isKnowSize) {
             isKnowSize = true;
-            initBase();
         }
+        initBase();
     }
 
     @Override
@@ -560,18 +573,86 @@ public class PhotoView extends ImageView {
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
         if (isEnable) {
-            final int Action = event.getActionMasked();
             if (event.getPointerCount() >= 2) hasMultiTouch = true;
+            final int action = event.getActionMasked();
+            if (!isZoomUp && !hasMultiTouch) {
+                if (action == MotionEvent.ACTION_DOWN) {
+                    touchDown = true;
+                    moveX = event.getRawX();
+                    moveY = event.getRawY();
+                } else if (action == MotionEvent.ACTION_MOVE) {
+                    float x = event.getRawX();
+                    float y = event.getRawY();
+                    float stepMoveX = x - moveX;
+                    float stepMoveY = y - moveY;
+                    if (touchDown && stepMoveY > 8 && Math.abs(stepMoveX) + 2 < Math.abs(stepMoveY)) {
+                        touchDown = false;
+                        canTransform = true;
+                    }
+                    if (canTransform && (Math.abs(stepMoveX) > 2 || Math.abs(stepMoveY) > 2)) {
+                        float density = getResources().getDisplayMetrics().density;
+                        if (stepMoveX > 2) {
+                            distanceX += 4 * density;
+                        } else if (stepMoveX < -2) {
+                            distanceX += -4 * density;
+                        }
+                        if (stepMoveY > 2) {
+                            distanceY += 6 * density;
+                            pullDownScale = Math.max(0.6F, pullDownScale - 0.015F);
+                        } else if (stepMoveY < -2) {
+                            distanceY += -6 * density;
+                            pullDownScale = Math.min(1, pullDownScale + 0.015F);
+                        }
+                        setTranslationX(distanceX);
+                        setTranslationY(distanceY);
+                        setScaleX(pullDownScale);
+                        setScaleY(pullDownScale);
+                        stepAlpha(this, pullDownScale);
+                    }
+                    moveX = x;
+                    moveY = y;
+                } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                    if (pullDownScale <= 0.7) {
+                        if (getContext() instanceof Activity) {
+                            final Activity activity = (Activity) getContext();
+                            ActivityCompat.finishAfterTransition(activity);
+                            stepAlpha(this, 1F);
+                        }
+                    } else {
+                        animate().translationX(0).translationY(0).scaleX(1F).scaleY(1F)
+                                .setDuration(250).setListener(new AnimatorListenerAdapter() {
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                stepAlpha(PhotoView.this, 1F);
+                            }
+                        }).start();
+                    }
+                    distanceX = 0;
+                    distanceY = 0;
+                    moveX = 0;
+                    moveY = 0;
+                    pullDownScale = 1F;
+                    canTransform = false;
+                }
+            }
 
             mDetector.onTouchEvent(event);
             mRotateDetector.onTouchEvent(event);
             mScaleDetector.onTouchEvent(event);
 
-            if (Action == MotionEvent.ACTION_UP || Action == MotionEvent.ACTION_CANCEL) onUp();
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) onUp();
 
             return true;
         } else {
             return super.dispatchTouchEvent(event);
+        }
+    }
+
+    private void stepAlpha(View view, float alpha) {
+        Drawable bg = view.getBackground();
+        if (bg != null) bg.setAlpha((int) (alpha * 255));
+        if (view.getParent() instanceof View) {
+            stepAlpha((View) view.getParent(), alpha);
         }
     }
 
