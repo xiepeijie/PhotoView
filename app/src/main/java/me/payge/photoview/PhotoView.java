@@ -100,6 +100,7 @@ public class PhotoView extends AppCompatImageView {
     float moveX = 0, moveY = 0;
     float distanceX = 0, distanceY = 0;
     float pullDownScale = 1F;
+    long downTimestamp;
     //pull down transform like WeChat
 
     public PhotoView(Context context) {
@@ -574,6 +575,7 @@ public class PhotoView extends AppCompatImageView {
             final int action = event.getActionMasked();
             if (!isZoomUp && !hasMultiTouch) {
                 if (action == MotionEvent.ACTION_DOWN) {
+                    downTimestamp = System.currentTimeMillis();
                     touchDown = true;
                     moveX = event.getRawX();
                     moveY = event.getRawY();
@@ -589,15 +591,15 @@ public class PhotoView extends AppCompatImageView {
                     if (canTransform && (Math.abs(stepMoveX) > 2 || Math.abs(stepMoveY) > 2)) {
                         float density = getResources().getDisplayMetrics().density;
                         if (stepMoveX > 2) {
-                            distanceX += 4 * density;
+                            distanceX += Math.max(density, stepMoveX);
                         } else if (stepMoveX < -2) {
-                            distanceX += -4 * density;
+                            distanceX += Math.min(-density, stepMoveX);
                         }
                         if (stepMoveY > 2) {
-                            distanceY += 6 * density;
+                            distanceY += Math.max(density, stepMoveY);
                             pullDownScale = Math.max(0.6F, pullDownScale - 0.015F);
                         } else if (stepMoveY < -2) {
-                            distanceY += -6 * density;
+                            distanceY += Math.min(-density, stepMoveY);
                             pullDownScale = Math.min(1, pullDownScale + 0.015F);
                         }
                         setTranslationX(distanceX);
@@ -609,7 +611,8 @@ public class PhotoView extends AppCompatImageView {
                     moveX = x;
                     moveY = y;
                 } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-                    if (pullDownScale <= 0.7) {
+                    float velocityY = distanceY / (System.currentTimeMillis() - downTimestamp);
+                    if (pullDownScale <= 0.75F || velocityY >= 3.1F) {
                         if (getContext() instanceof Activity) {
                             final Activity activity = (Activity) getContext();
                             ActivityCompat.finishAfterTransition(activity);
@@ -624,12 +627,13 @@ public class PhotoView extends AppCompatImageView {
                             }
                         }).start();
                     }
-                    distanceX = 0;
-                    distanceY = 0;
+                    canTransform = false;
                     moveX = 0;
                     moveY = 0;
+                    distanceX = 0;
+                    distanceY = 0;
                     pullDownScale = 1F;
-                    canTransform = false;
+                    downTimestamp = 0;
                 }
             }
 
