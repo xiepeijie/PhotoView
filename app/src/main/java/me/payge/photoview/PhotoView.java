@@ -100,6 +100,7 @@ public class PhotoView extends AppCompatImageView {
     float moveX = 0, moveY = 0;
     float distanceX = 0, distanceY = 0;
     float pullDownScale = 1F;
+    float bgAlpha = 1F;
     long downTimestamp;
     //pull down transform like WeChat
 
@@ -598,15 +599,17 @@ public class PhotoView extends AppCompatImageView {
                         if (stepMoveY > 2) {
                             distanceY += Math.max(density, stepMoveY);
                             pullDownScale = Math.max(0.6F, pullDownScale - 0.015F);
+                            bgAlpha = Math.max(0, bgAlpha - 0.025F);
                         } else if (stepMoveY < -2) {
                             distanceY += Math.min(-density, stepMoveY);
                             pullDownScale = Math.min(1, pullDownScale + 0.015F);
+                            bgAlpha = Math.min(1, bgAlpha + 0.025F);
                         }
                         setTranslationX(distanceX);
                         setTranslationY(distanceY);
                         setScaleX(pullDownScale);
                         setScaleY(pullDownScale);
-                        stepAlpha(this, pullDownScale);
+                        stepAlpha(this, bgAlpha);
                     }
                     moveX = x;
                     moveY = y;
@@ -949,7 +952,7 @@ public class PhotoView extends AppCompatImageView {
 
         @Override
         public boolean onSingleTapUp(MotionEvent e) {
-            postDelayed(mClickRunnable, 250);
+            postDelayed(mClickRunnable, 200);
             return false;
         }
 

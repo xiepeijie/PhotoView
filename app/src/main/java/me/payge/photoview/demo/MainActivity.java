@@ -1,7 +1,6 @@
 package me.payge.photoview.demo;
 
 import android.content.Intent;
-import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -27,12 +26,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
+        String name = "profile";
+        int i = 0;
+        switch (v.getId()) {
+            case R.id.photo_1:
+                break;
+            case R.id.photo_2:
+                i = 1;
+                break;
+            case R.id.photo_3:
+                i = 2;
+        }
+        name += i;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            v.setTransitionName("profile");
+            v.setTransitionName(name);
         }
         Intent intent =  new Intent(getApplication(), PreviewPhotoActivity.class);
+        intent.putExtra("i", i);
         ActivityOptionsCompat options = ActivityOptionsCompat.
-                makeSceneTransitionAnimation(MainActivity.this, v, "profile");
+                makeSceneTransitionAnimation(MainActivity.this, v, name);
         startActivity(intent, options.toBundle());
 
     }
