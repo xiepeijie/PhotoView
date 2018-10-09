@@ -4,7 +4,7 @@
 
 ## Screenshot
 
-![screen](https://github.com/xiepeijie/PhotoView/blob/master/gif/demo.gif)  
+![screen](https://github.com/xiepeijie/PhotoView/blob/master/gif/demo.webp)
 
 # About me
 微博：[@萧雾宇](http://weibo.com/payge)
