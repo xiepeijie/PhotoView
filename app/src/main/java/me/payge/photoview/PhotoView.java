@@ -471,6 +471,12 @@ public class PhotoView extends AppCompatImageView {
     }
 
     @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        stepAlpha(this, 1F);
+    }
+
+    @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         if (!hasDrawable) {
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -619,7 +625,6 @@ public class PhotoView extends AppCompatImageView {
                         if (getContext() instanceof Activity) {
                             final Activity activity = (Activity) getContext();
                             ActivityCompat.finishAfterTransition(activity);
-                            stepAlpha(this, 1F);
                         }
                     } else {
                         animate().translationX(0).translationY(0).scaleX(1F).scaleY(1F)
