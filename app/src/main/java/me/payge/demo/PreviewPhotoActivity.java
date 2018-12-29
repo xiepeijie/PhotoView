@@ -1,4 +1,4 @@
-package me.payge.photoview.demo;
+package me.payge.demo;
 
 import android.os.Build;
 import android.os.Bundle;
@@ -9,6 +9,7 @@ import android.support.v4.view.ViewPager;
 import android.view.View;
 import android.view.ViewGroup;
 
+import me.payge.evenbus.EventBus;
 import me.payge.photoview.PhotoView;
 import me.payge.photoview.R;
 
@@ -48,7 +49,7 @@ public class PreviewPhotoActivity extends FragmentActivity implements View.OnCli
                     child = container.getChildAt(j);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         if (child == object) {
-                            ((View)object).setTransitionName("profile" + i);
+                            child.setTransitionName("profile" + i);
                         } else {
                             child.setTransitionName(null);
                         }
@@ -94,6 +95,12 @@ public class PreviewPhotoActivity extends FragmentActivity implements View.OnCli
             }
         });
         previewPager.setCurrentItem(i, false);
+        previewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
+            @Override
+            public void onPageSelected(int position) {
+                EventBus.getInstance().post(position);
+            }
+        });
     }
 
     @Override
